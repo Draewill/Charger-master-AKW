@@ -3,179 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CAMC Cardiology & Radiology Explorer</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>CAMC Charge Master Dashboard</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+    <!-- Simple React CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
+        }
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root" style="height: 100vh;"></div>
 
     <script type="text/babel">
-        const { useState, useMemo } = React;
-        const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } = Recharts;
-
-        // EMBEDDED DATA FROM YOUR FILE (Mapped: Desc, CPT, Base Price)
-        const RAW_DATA = [
-            {"d": "3D Rendering w/Interpret and Postprocess Different Work Station -CCL", "c": "76377", "p": 8133.0},
-            {"d": "Abdominal Paracentesis w/Imagining – CCL", "c": "49083", "p": 7792.0},
-            {"d": "Addon Cardiac Output Measurement Thermodilution During Catheterization – CCL", "c": "93598", "p": 96.0},
-            {"d": "Addon Endovascular Placement Iliac Artery Occlusion Device –CCL", "c": "34808", "p": 14551.0},
-            {"d": "Addon Endovascular Repair Iliac Artery During Endograft Placement Unilateral – CCL", "c": "34717", "p": 16535.0},
-            {"d": "Addon Fluoroscopic Guidance for Needle Placement - CCL", "c": "77002", "p": 7611.0},
-            {"d": "Addon Harvest Femoropopliteal Vein 1 Segment for Vascular Procedure –CCL", "c": "35572", "p": 17026.0},
-            {"d": "Addon Injection During Cardiac Cath Selective Coronary Angiography - CCL", "c": "93563", "p": 7979.0},
-            {"d": "Addon Percutaneous Transluminal Revascularization Iliac Artery Initial – CCL", "c": "37220", "p": 13744.0},
-            {"d": "Atherectomy Supra-Inguinal Vessel Initial - CCL", "c": "0234T", "p": 14000.0},
-            {"d": "Bypass Graft Initial Vein - CCL", "c": "35501", "p": 25000.0},
-            {"d": "Cath placement in coronary artery for coronary angio - CCL", "c": "93454", "p": 12500.0},
-            {"d": "Echo Transesophageal for Guidance - CCL", "c": "93318", "p": 4500.0},
-            {"d": "IVUS Initial Vessel - CCL", "c": "37252", "p": 6800.0},
-            {"d": "Lower Extremity Ultrasound - CCL", "c": "93922", "p": 1200.0},
-            {"d": "MRI Brain w/o Contrast", "c": "70551", "p": 3200.0},
-            {"d": "CT Chest w/ Contrast", "c": "71260", "p": 4100.0}
+        // Simple data
+        const chargeData = [
+            { cpt: "76377", procedure: "3D Rendering w/Interpret", price: 8133 },
+            { cpt: "49083", procedure: "Abdominal Paracentesis", price: 7792 },
+            { cpt: "93598", procedure: "Cardiac Output Measurement", price: 96 },
+            { cpt: "34808", procedure: "Iliac Artery Occlusion Device", price: 14551 },
+            { cpt: "34717", procedure: "Endovascular Repair Iliac Artery", price: 16535 },
+            { cpt: "77002", procedure: "Fluoroscopic Guidance", price: 7611 },
+            { cpt: "35572", procedure: "Harvest Femoropopliteal Vein", price: 17026 },
+            { cpt: "93563", procedure: "Selective Coronary Angiography", price: 7979 },
+            { cpt: "37220", procedure: "Percutaneous Transluminal Revascularization", price: 13744 },
+            { cpt: "0234T", procedure: "Atherectomy Supra-Inguinal Vessel", price: 14000 },
+            { cpt: "35501", procedure: "Bypass Graft Initial Vein", price: 25000 },
+            { cpt: "93454", procedure: "Coronary Angiography", price: 12500 },
+            { cpt: "93318", procedure: "Transesophageal Echo", price: 4500 },
+            { cpt: "37252", procedure: "IVUS Initial Vessel", price: 6800 },
+            { cpt: "93922", procedure: "Lower Extremity Ultrasound", price: 1200 },
+            { cpt: "70551", procedure: "MRI Brain w/o Contrast", price: 3200 },
+            { cpt: "71260", procedure: "CT Chest w/ Contrast", price: 4100 }
         ];
 
-        const App = () => {
-            const [search, setSearch] = useState("");
+        function App() {
+            const [search, setSearch] = React.useState("");
 
-            const filtered = useMemo(() => {
-                const term = search.toLowerCase();
-                return RAW_DATA.filter(i => 
-                    i.d.toLowerCase().includes(term) || i.c.toLowerCase().includes(term)
-                ).sort((a, b) => b.p - a.p);
-            }, [search]);
+            // Filter data
+            const filteredData = chargeData.filter(item => 
+                item.procedure.toLowerCase().includes(search.toLowerCase()) ||
+                item.cpt.includes(search)
+            );
 
-            const stats = useMemo(() => {
-                const total = filtered.reduce((acc, curr) => acc + curr.p, 0);
-                return {
-                    count: filtered.length,
-                    avg: filtered.length > 0 ? total / filtered.length : 0,
-                    max: filtered.length > 0 ? Math.max(...filtered.map(i => i.p)) : 0
-                };
-            }, [filtered]);
+            // Format currency
+            const formatMoney = (num) => {
+                return '$' + num.toLocaleString('en-US');
+            };
 
-            const fmt = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
+            // Calculate stats
+            const total = filteredData.reduce((sum, i) => sum + i.price, 0);
+            const avg = filteredData.length ? total / filteredData.length : 0;
+            const max = filteredData.length ? Math.max(...filteredData.map(i => i.price)) : 0;
 
             return (
-                <div className="min-h-screen pb-20">
+                <div className="p-6 max-w-7xl mx-auto">
                     {/* Header */}
-                    <header className="bg-slate-900 text-white py-8 px-4 mb-8 shadow-xl">
-                        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="bg-blue-900 text-white rounded-2xl p-8 mb-8 shadow-xl">
+                        <div className="flex justify-between items-center">
                             <div>
-                                <h1 className="text-3xl font-black tracking-tight">CAMC VIBE DASHBOARD</h1>
-                                <p className="text-slate-400 font-medium">Cardiology & Radiology Standard Charges</p>
+                                <h1 className="text-3xl font-bold">CAMC Charge Master</h1>
+                                <p className="text-blue-200 mt-2">Cardiology & Radiology Standard Charges</p>
                             </div>
-                            <div className="relative w-full md:w-96">
-                                <input 
-                                    className="w-full bg-slate-800 border-none rounded-2xl py-4 pl-6 pr-12 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 shadow-inner"
-                                    placeholder="Search by Procedure or CPT..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                />
-                            </div>
+                            <input 
+                                className="px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 w-64"
+                                placeholder="Search procedures..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
                         </div>
-                    </header>
+                    </div>
 
-                    <main className="max-w-6xl mx-auto px-4 space-y-8">
-                        {/* Summary Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {[
-                                { label: 'Procedures Found', val: stats.count.toLocaleString(), color: 'text-blue-600' },
-                                { label: 'Average Base Price', val: fmt(stats.avg), color: 'text-emerald-600' },
-                                { label: 'Highest Charge', val: fmt(stats.max), color: 'text-rose-600' }
-                            ].map((s, i) => (
-                                <div key={i} className="glass p-6 rounded-3xl border border-white shadow-sm">
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{s.label}</p>
-                                    <p className={`text-3xl font-black mt-2 ${s.color}`}>{s.val}</p>
-                                </div>
-                            ))}
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                            <p className="text-gray-500 text-sm uppercase">Procedures</p>
+                            <p className="text-3xl font-bold text-blue-600 mt-2">{filteredData.length}</p>
                         </div>
-
-                        {/* Visuals */}
-                        <div className="glass p-8 rounded-3xl border border-white shadow-sm h-[400px]">
-                            <h3 className="text-lg font-bold text-slate-800 mb-6">Price Comparison (Top 10)</h3>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={filtered.slice(0, 10)}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                    <XAxis 
-                                        dataKey="c" 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                        tick={{fill: '#64748b', fontSize: 12}}
-                                        interval={0}
-                                        angle={-45}
-                                        textAnchor="end"
-                                        height={60}
-                                    />
-                                    <YAxis 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                        tick={{fill: '#64748b'}} 
-                                        tickFormatter={(v) => `$${v/1000}k`} 
-                                    />
-                                    <Tooltip 
-                                        cursor={{fill: '#f8fafc'}} 
-                                        content={({active, payload}) => {
-                                            if (active && payload && payload.length) {
-                                                return (
-                                                    <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-2xl border border-slate-700">
-                                                        <p className="text-xs font-bold text-slate-400 mb-1">{payload[0].payload.c}</p>
-                                                        <p className="text-sm font-semibold mb-2">{payload[0].payload.d}</p>
-                                                        <p className="text-xl font-black text-emerald-400">{fmt(payload[0].value)}</p>
-                                                    </div>
-                                                );
-                                            }
-                                            return null;
-                                        }} 
-                                    />
-                                    <Bar dataKey="p" radius={[10, 10, 0, 0]}>
-                                        {filtered.slice(0, 10).map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={index === 0 ? '#2563eb' : '#3b82f6'} fillOpacity={1 - (index * 0.08)} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
+                        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                            <p className="text-gray-500 text-sm uppercase">Average Price</p>
+                            <p className="text-3xl font-bold text-green-600 mt-2">{formatMoney(avg)}</p>
                         </div>
+                        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                            <p className="text-gray-500 text-sm uppercase">Highest Price</p>
+                            <p className="text-3xl font-bold text-red-600 mt-2">{formatMoney(max)}</p>
+                        </div>
+                    </div>
 
-                        {/* Detailed Table */}
-                        <div className="glass rounded-3xl border border-white shadow-sm overflow-hidden">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-100">
-                                        <th className="px-8 py-5 text-xs font-bold text-slate-400 uppercase tracking-widest">CPT</th>
-                                        <th className="px-8 py-5 text-xs font-bold text-slate-400 uppercase tracking-widest">Procedure Description</th>
-                                        <th className="px-8 py-5 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Base Price</th>
+                    {/* Simple Chart - Using div bars instead of Recharts */}
+                    <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 mb-8">
+                        <h2 className="text-xl font-bold text-gray-800 mb-6">Top 10 Procedures</h2>
+                        <div className="space-y-4">
+                            {filteredData.sort((a,b) => b.price - a.price).slice(0, 10).map((item, i) => {
+                                const maxPrice = Math.max(...filteredData.map(p => p.price));
+                                const width = (item.price / maxPrice) * 100;
+                                return (
+                                    <div key={i} className="space-y-1">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="font-mono text-blue-600">{item.cpt}</span>
+                                            <span className="font-semibold">{formatMoney(item.price)}</span>
+                                        </div>
+                                        <div className="text-xs text-gray-600 mb-1">{item.procedure}</div>
+                                        <div className="w-full bg-gray-100 rounded-full h-3">
+                                            <div 
+                                                className="bg-blue-600 h-3 rounded-full" 
+                                                style={{ width: width + '%' }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Table */}
+                    <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+                        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                            <h2 className="text-lg font-bold text-gray-800">Procedure Details</h2>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">CPT</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Procedure</th>
+                                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Price</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    {filtered.slice(0, 50).map((row, i) => (
-                                        <tr key={i} className="hover:bg-blue-50/50 transition-colors group">
-                                            <td className="px-8 py-5 font-mono text-sm text-blue-600 font-bold">{row.c}</td>
-                                            <td className="px-8 py-5 text-slate-700 font-medium group-hover:text-slate-900">{row.d}</td>
-                                            <td className="px-8 py-5 text-right font-black text-slate-900">{fmt(row.p)}</td>
+                                <tbody className="divide-y divide-gray-200">
+                                    {filteredData.map((item, i) => (
+                                        <tr key={i} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 font-mono text-sm text-blue-600 font-semibold">{item.cpt}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-800">{item.procedure}</td>
+                                            <td className="px-6 py-4 text-sm font-bold text-right">{formatMoney(item.price)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
-                            {filtered.length > 50 && (
-                                <div className="p-6 text-center text-slate-400 text-sm font-medium bg-slate-50/50">
-                                    Showing top 50 results of {filtered.length}
-                                </div>
-                            )}
                         </div>
-                    </main>
+                    </div>
                 </div>
             );
-        };
+        }
 
+        // Render
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
